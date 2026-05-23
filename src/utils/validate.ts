@@ -81,10 +81,6 @@ export function validateCreateIssue(body: Partial<CreateIssueBody>): string[] {
   return errors;
 }
 
-/**
- * Validate update issue request body.
- * All fields are optional, but when present they must meet the same constraints as creation.
- */
 export function validateUpdateIssue(body: Partial<UpdateIssueBody>): string[] {
   const errors: string[] = [];
 

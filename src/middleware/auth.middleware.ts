@@ -4,10 +4,6 @@ import { env } from "../config/env.js";
 import { sendError } from "../utils/response.js";
 import type { JwtPayload } from "../modules/auth/auth.types.js";
 
-/**
- * Extend Express Request to include the decoded user from JWT.
- * This allows downstream handlers to access req.user safely.
- */
 declare global {
   namespace Express {
     interface Request {
@@ -16,11 +12,6 @@ declare global {
   }
 }
 
-/**
- * Authentication middleware.
- * Verifies the JWT from the Authorization header and attaches decoded payload to req.user.
- * Token format: Authorization: <token>
- */
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
 
@@ -29,7 +20,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     return;
   }
 
-  // Support both "Bearer <token>" and raw "<token>" formats
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
   try {
@@ -41,10 +31,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
   }
 }
 
-/**
- * Authorization middleware factory.
- * Returns a middleware that checks if the authenticated user has one of the allowed roles.
- */
 export function authorize(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {

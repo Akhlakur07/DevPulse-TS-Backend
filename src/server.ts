@@ -8,11 +8,9 @@ import { errorHandler } from "./middleware/error.middleware.js";
 
 const app: Application = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check route
 app.get("/", (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
@@ -21,14 +19,10 @@ app.get("/", (_req: Request, res: Response) => {
   });
 });
 
-// API Routes
 app.use("/api/auth", authRouter);
 app.use("/api/issues", issuesRouter);
 
-// Global error handler (must be registered after all routes)
 app.use(errorHandler);
-
-// Initialize database tables and start server
 initDb()
   .then(() => {
     app.listen(env.PORT, () => {

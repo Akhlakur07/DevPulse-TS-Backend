@@ -1,9 +1,5 @@
 import type { Response } from "express";
 
-/**
- * Send a standardized success response.
- * Matches the required response format: { success: true, message, data }
- */
 export function sendSuccess(
   res: Response,
   statusCode: number,
@@ -22,10 +18,6 @@ export function sendSuccess(
   res.status(statusCode).json(response);
 }
 
-/**
- * Send a standardized error response.
- * Matches the required response format: { success: false, message, errors }
- */
 export function sendError(
   res: Response,
   statusCode: number,

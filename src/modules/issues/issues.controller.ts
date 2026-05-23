@@ -5,16 +5,10 @@ import { validateCreateIssue, validateUpdateIssue } from "../../utils/validate.j
 import type { IssueRow, ReporterInfo } from "./issues.types.js";
 import type { UserRow } from "../auth/auth.types.js";
 
-/**
- * POST /api/issues
- * Create a new bug report or feature request.
- * reporter_id is extracted from the JWT (req.user.id), not the request body.
- */
 export async function createIssue(req: Request, res: Response): Promise<void> {
   try {
     const { title, description, type } = req.body;
 
-    // Validate request body
     const errors = validateCreateIssue({ title, description, type });
     if (errors.length > 0) {
       sendError(res, 400, "Validation failed", errors);
