@@ -33,16 +33,10 @@ export async function createIssue(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * GET /api/issues
- * Retrieve all issues with optional sorting and filtering.
- * Reporter data is fetched separately (no JOINs) using WHERE id IN (...).
- */
 export async function getAllIssues(req: Request, res: Response): Promise<void> {
   try {
     const { sort, type, status } = req.query;
 
-    // Build dynamic SQL query with optional filters
     let sql = "SELECT * FROM issues";
     const params: (string | number)[] = [];
     const conditions: string[] = [];
@@ -61,20 +55,16 @@ export async function getAllIssues(req: Request, res: Response): Promise<void> {
       sql += " WHERE " + conditions.join(" AND ");
     }
 
-    // Sort by created_at (default: newest first)
     const sortOrder = sort === "oldest" ? "ASC" : "DESC";
     sql += ` ORDER BY created_at ${sortOrder}`;
 
     const issuesResult = await query<IssueRow>(sql, params);
     const issues = issuesResult.rows;
 
-    // If no issues, return empty array
     if (issues.length === 0) {
       sendSuccess(res, 200, "Issues retrived successfully", []);
       return;
     }
-
-    // Fetch reporter data separately (no JOINs as per requirement)
     const reporterIds = [...new Set(issues.map((issue) => issue.reporter_id))];
     const placeholders = reporterIds.map((_, i) => `$${i + 1}`).join(", ");
     const reportersResult = await query<UserRow>(
@@ -82,7 +72,6 @@ export async function getAllIssues(req: Request, res: Response): Promise<void> {
       reporterIds
     );
 
-    // Create a map of reporter_id -> reporter info for O(1) lookup
     const reporterMap = new Map<number, ReporterInfo>();
     for (const reporter of reportersResult.rows) {
       reporterMap.set(reporter.id, {
@@ -92,7 +81,6 @@ export async function getAllIssues(req: Request, res: Response): Promise<void> {
       });
     }
 
-    // Combine issues with reporter data
     const issuesWithReporter = issues.map((issue) => {
       const reporter = reporterMap.get(issue.reporter_id);
       return {
@@ -114,10 +102,6 @@ export async function getAllIssues(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * GET /api/issues/:id
- * Retrieve full details of a specific issue with reporter info.
- */
 export async function getIssueById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
@@ -134,7 +118,6 @@ export async function getIssueById(req: Request, res: Response): Promise<void> {
 
     const issue = issueResult.rows[0]!;
 
-    // Fetch reporter data separately (no JOINs)
     const reporterResult = await query<UserRow>(
       "SELECT id, name, role FROM users WHERE id = $1",
       [issue.reporter_id]
@@ -160,24 +143,17 @@ export async function getIssueById(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * PATCH /api/issues/:id
- * Update issue title, description, or type.
- * Permissions: Maintainer can update any issue. Contributor can only update own issues with status 'open'.
- */
 export async function updateIssue(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const { title, description, type } = req.body;
 
-    // Validate request body
     const errors = validateUpdateIssue({ title, description, type });
     if (errors.length > 0) {
       sendError(res, 400, "Validation failed", errors);
       return;
     }
 
-    // Fetch the existing issue
     const issueResult = await query<IssueRow>(
       "SELECT * FROM issues WHERE id = $1",
       [Number(id)]
@@ -191,21 +167,17 @@ export async function updateIssue(req: Request, res: Response): Promise<void> {
     const issue = issueResult.rows[0]!;
     const user = req.user!;
 
-    // Permission check
     if (user.role === "contributor") {
-      // Contributors can only update their own issues
       if (issue.reporter_id !== user.id) {
         sendError(res, 403, "Access denied. You can only update your own issues");
         return;
       }
-      // Contributors can only update issues with status 'open'
       if (issue.status !== "open") {
         sendError(res, 409, "Cannot update issue. Issue status is not 'open'");
         return;
       }
     }
 
-    // Build dynamic UPDATE query with only provided fields
     const updates: string[] = [];
     const params: (string | number)[] = [];
 
@@ -223,14 +195,11 @@ export async function updateIssue(req: Request, res: Response): Promise<void> {
       params.push(type);
       updates.push(`type = $${params.length}`);
     }
-
-    // If no fields to update, return the existing issue
     if (updates.length === 0) {
       sendError(res, 400, "No fields to update");
       return;
     }
 
-    // Always update the updated_at timestamp
     updates.push("updated_at = NOW()");
 
     params.push(Number(id));
@@ -246,15 +215,10 @@ export async function updateIssue(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * DELETE /api/issues/:id
- * Permanently remove an issue. Maintainer only.
- */
 export async function deleteIssue(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
 
-    // Check if issue exists
     const issueResult = await query<IssueRow>(
       "SELECT id FROM issues WHERE id = $1",
       [Number(id)]
