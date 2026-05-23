@@ -2,7 +2,7 @@
 
 A collaborative backend API for software teams to report bugs, suggest features, and coordinate resolutions. Built with Express.js, TypeScript, and PostgreSQL.
 
-**Live URL:** [https://devpulse-api.vercel.app](https://devpulse-api.vercel.app)
+**Live URL:** [https://dev-pulse-topaz-nine.vercel.app](https://dev-pulse-topaz-nine.vercel.app)
 
 ---
 
